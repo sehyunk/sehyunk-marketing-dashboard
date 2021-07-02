@@ -86,3 +86,40 @@ group by v.utm_source, v.utm_medium, v.utm_campaign, v.date
   - '집계조건이 달라서'가 원인
   - SQL더 학습하자
 - 유료버전을 사용하면 서버와 직접연결할 수 있다고 함. 일정주기로 데이터가 자동으로 업데이트되면 정말 유용할 듯.(만들어보고 싶다)
+
+## 쿼리 수정
+- 같은 테이블을 여러번 join으로 호출하니 깔끔해보이지 않아서 수정
+- with 절 활용해서 joined라는 테이블 만들어 활용
+
+```
+WITH joined AS (
+  select v.date, v.cid, v.utm_source, v.utm_medium, v.utm_campaign, u.user_id, c.cert_id, o.user_id as ordered_id, o.sales
+  from `funnel-visualization.sample_data.visit_log` as v
+        left join `funnel-visualization.sample_data.user` as u on v.cid = u.cid
+        left join `funnel-visualization.sample_data.cert_log` as c on u.user_id = c.user_id
+        left join `funnel-visualization.sample_data.order` as o on u.user_id = o.user_id 
+)
+select 'visit' as stage, j.date,
+    j.utm_source, j.utm_medium, j.utm_campaign, 
+    count(distinct j.cid) as values, 0 as sales
+from joined as j
+group by j.utm_source, j.utm_medium, j.utm_campaign, j.date
+union all 
+select 'sign in' as stage, j.date,
+    j.utm_source, j.utm_medium, j.utm_campaign, 
+    count(distinct j.user_id) as values, 0 as sales
+from joined as j
+group by j.utm_source, j.utm_medium, j.utm_campaign, j.date
+union all 
+select 'cert_phone' as stage, j.date,
+    j.utm_source, j.utm_medium, j.utm_campaign, 
+    count(distinct j.cert_id) as values, 0 as sales
+from joined as j
+group by j.utm_source, j.utm_medium, j.utm_campaign, j.date
+union all 
+select 'order' as stage, j.date,
+    j.utm_source, j.utm_medium, j.utm_campaign, 
+    count(distinct j.ordered_id) as values, sum(j.sales) as sales
+from joined as j
+group by j.utm_source, j.utm_medium, j.utm_campaign, j.date
+```
