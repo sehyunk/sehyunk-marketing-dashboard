@@ -91,7 +91,7 @@ group by v.utm_source, v.utm_medium, v.utm_campaign, v.date
 - 같은 테이블을 여러번 join으로 호출하니 깔끔해보이지 않아서 수정
 - with 절 활용해서 joined라는 테이블 만들어 활용
 
-```
+```sql
 WITH joined AS (
   select v.date, v.cid, v.utm_source, v.utm_medium, v.utm_campaign, u.user_id, c.cert_id, o.user_id as ordered_id, o.sales
   from `funnel-visualization.sample_data.visit_log` as v
